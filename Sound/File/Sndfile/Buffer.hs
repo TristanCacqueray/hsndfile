@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
 -- | This module provides the 'Buffer' type class that abstracts the array type that is being used for I\/O. For concrete instances see for example the /hsndfile-vector/ package <http://hackage.haskell.org/package/hsndfile-vector>.
 module Sound.File.Sndfile.Buffer (
     module Sound.File.Sndfile.Buffer.Sample
@@ -10,6 +10,7 @@ module Sound.File.Sndfile.Buffer (
   , writeFile
 ) where
 
+import qualified Data.Vector.Storable as SV
 import Control.Exception (bracket)
 import Control.Monad
 import Foreign
@@ -23,6 +24,11 @@ class Buffer a e where
     fromForeignPtr :: ForeignPtr e -> Int -> Int -> IO (a e)
     -- | Retrieve from a buffer a 'ForeignPtr' pointing to its data, a start index and an element count.
     toForeignPtr   :: a e -> IO (ForeignPtr e, Int, Int)
+
+-- | Canonical Buffer instance for storable vector.
+instance Storable a => Buffer SV.Vector a where
+    fromForeignPtr p i n = return $ SV.unsafeFromForeignPtr p i n
+    toForeignPtr         = return . SV.unsafeToForeignPtr
 
 -- | Return an buffer with the requested number of frames of data.
 --
